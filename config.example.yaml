@@ -1,0 +1,9 @@
+app:
+  name: MetaCMSWorkerHexo
+
+backend:
+  host:
+  port:
+
+loki:
+  host:
