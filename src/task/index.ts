@@ -4,15 +4,15 @@ import { HttpRequestService } from '../api';
 import { HexoService } from '../hexo';
 import { logger, loggerService } from '../logger';
 
-const commonDoing = async (http: HttpRequestService): Promise<void> => {
-  await http.reportWorkerTaskFinishedToBackend();
-  loggerService.final('Task finished');
-};
-
-export const startGitTask = async (): Promise<void> => {
+export const startTask = async (): Promise<void> => {
   // const http = new HttpRequestService();
   // const taskConf = await http.getWorkerTaskFromBackend();
   // if (!taskConf) throw Error('Can not get task config from backend or gateway');
+
+  const commonDoing = async (http: HttpRequestService): Promise<void> => {
+    // await http.reportWorkerTaskFinishedToBackend();
+    loggerService.final('Task finished');
+  };
 
   const taskConf: MetaWorker.Configs.GitWorkerTaskConfig = {
     taskId: '123-ABC',

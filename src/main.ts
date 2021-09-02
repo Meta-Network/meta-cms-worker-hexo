@@ -3,16 +3,16 @@ import timer from 'timers';
 
 import { HttpRequestService } from './api';
 import { logger } from './logger';
-import { startGitTask } from './task';
+import { startTask } from './task';
 
 async function bootstrap(): Promise<void> {
   // const http = new HttpRequestService();
-  // logger.info('App started');
+  logger.info('App started');
   // await http.reportWorkerTaskStartedToBackend();
 
   timer
     .setTimeout(async () => {
-      await startGitTask();
+      await startTask();
     }, 3000)
     .unref();
 
