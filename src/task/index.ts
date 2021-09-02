@@ -4,6 +4,11 @@ import { HttpRequestService } from '../api';
 import { HexoService } from '../hexo';
 import { logger, loggerService } from '../logger';
 
+const commonDoing = async (http: HttpRequestService): Promise<void> => {
+  await http.reportWorkerTaskFinishedToBackend();
+  loggerService.final('Task finished');
+};
+
 export const startGitTask = async (): Promise<void> => {
   // const http = new HttpRequestService();
   // const taskConf = await http.getWorkerTaskFromBackend();
@@ -14,7 +19,11 @@ export const startGitTask = async (): Promise<void> => {
     taskMethod: MetaWorker.Enums.TaskMethod.GENERATE_HEXO_STATIC_FILES,
     taskWorkspace: '/tmp/123-ABC',
     username: 'Garfield550',
-    title: 'Hexo starter',
+    title: 'My awesome site',
+    description: 'WOW. Such Doge!',
+    keywords: ['Test'],
+    language: 'en',
+    timezone: 'UTC+8',
     configId: 15,
     templateName: 'hexo-starter',
     templateRepoUrl: 'https://github.com/hexojs/hexo-starter.git',
@@ -32,14 +41,23 @@ export const startGitTask = async (): Promise<void> => {
   const hexoService = new HexoService(taskConf);
   await hexoService.init();
 
+  if (taskMethod === MetaWorker.Enums.TaskMethod.UPDATE_HEXO_CONFIG_FILES) {
+    logger.info(`Starting task updateHexoConfigFiles`);
+
+    await hexoService.updateHexoConfigFiles();
+
+    logger.info(`Task updateHexoConfigFiles finished`);
+
+    // await commonDoing(http);
+  }
+
   if (taskMethod === MetaWorker.Enums.TaskMethod.GENERATE_HEXO_STATIC_FILES) {
     logger.info(`Starting task generateHexoStaticFiles`);
 
-    // TODO: Hexo service load config(Check it if not match task config, then create config)
     await hexoService.generateHexoStaticFiles();
 
     logger.info(`Task generateHexoStaticFiles finished`);
-    // await http.reportWorkerTaskFinishedToBackend();
-    loggerService.final('Task finished');
+
+    // await commonDoing(http);
   }
 };

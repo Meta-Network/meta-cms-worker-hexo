@@ -33,10 +33,23 @@ const readProcessEnv = (): Record<string, unknown> => {
   }
 };
 
+const readHexoDefault = (): Record<string, unknown> => {
+  try {
+    const configFile = path.join(__dirname, 'defaultHexoConfig.yaml');
+    fs.accessSync(configFile, fs.constants.R_OK);
+    const configData = fs.readFileSync(configFile, 'utf8');
+    return yaml.parse(configData);
+  } catch (error) {
+    return {};
+  }
+};
+
 const configBuilder = (): Record<string, unknown> => {
   const file = openConfigFile();
   const env = readProcessEnv();
-  return { ...file, ...env };
+  const hexo = readHexoDefault();
+  const conf = { ...file, ...env };
+  return hexo ? { ...conf, hexo: { ...hexo } } : conf;
 };
 
 interface ConfigGetOptions {

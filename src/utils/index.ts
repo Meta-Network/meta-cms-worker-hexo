@@ -12,3 +12,7 @@ export const isUndefined = (obj: unknown): obj is undefined =>
 export const isProd = (): boolean => {
   return process.env.NODE_ENV === 'production';
 };
+
+export const isEmptyObj = (obj: Record<string, unknown>): boolean => {
+  return obj && Object.keys(obj).length === 0 && obj.constructor === Object;
+};
