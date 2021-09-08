@@ -23,7 +23,7 @@ export class HttpRequestService {
     if (!_name) throw Error('Can not find HOSTNAME env');
     this.hostName = _name;
 
-    this.apiUrl = `${this.baseUrl}/task/git/${this.hostName}`;
+    this.apiUrl = `${this.baseUrl}/task/hexo/${this.hostName}`;
   }
 
   private readonly client: SuperAgentStatic;

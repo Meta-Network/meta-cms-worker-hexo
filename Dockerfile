@@ -21,7 +21,7 @@ RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && ln -s /opt/7z/7zz /usr/local/bin/7zz\
   && 7zz
 
-WORKDIR /opt/MetaNetwork/Worker-Git
+WORKDIR /opt/MetaNetwork/Worker-Hexo
 COPY . .
 RUN yarn install --frozen-lockfile && yarn run build
 

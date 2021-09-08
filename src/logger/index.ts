@@ -24,7 +24,7 @@ class LoggerService {
         const _host = config.get<string>('backend.host');
         const _port = config.get<number>('backend.port');
         const _name = config.get<string>('HOSTNAME');
-        const _url = `${_host}:${_port}/task/git/${_name}`;
+        const _url = `${_host}:${_port}/task/hexo/${_name}`;
         const _sec = config.get<string>('WORKER_SECRET');
         const _auth = `Basic ${Buffer.from(_sec).toString('base64')}`;
 
