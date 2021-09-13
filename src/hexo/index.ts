@@ -15,7 +15,7 @@ import { isEmptyObj } from '../utils';
 
 export class HexoService {
   constructor(
-    private readonly taskConfig: MetaWorker.Configs.HexoWorkerTackConfig,
+    private readonly taskConfig: MetaWorker.Configs.DeployTaskConfig,
   ) {
     const baseDir = `${taskConfig.taskWorkspace}/${taskConfig.gitReponame}`;
     logger.verbose(`Hexo work dir is: ${baseDir}`, {
@@ -68,7 +68,7 @@ export class HexoService {
   }
 
   private async updateHexoConfigFile(
-    taskConfig: MetaWorker.Configs.HexoWorkerTackConfig,
+    taskConfig: MetaWorker.Configs.DeployTaskConfig,
   ): Promise<void> {
     // Get worker Hexo config
     const defConf = config.get<HexoConfig>('hexo', {} as HexoConfig);

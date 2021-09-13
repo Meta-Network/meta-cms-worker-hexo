@@ -20,7 +20,7 @@ export const startTask = async (): Promise<void> => {
   const hexoService = new HexoService(taskConf);
   await hexoService.init();
 
-  if (taskMethod === MetaWorker.Enums.TaskMethod.UPDATE_HEXO_CONFIG_FILES) {
+  if (taskMethod === MetaWorker.Enums.TaskMethod.HEXO_UPDATE_CONFIG) {
     logger.info(`Starting task updateHexoConfigFiles`);
 
     await hexoService.updateHexoConfigFiles();
@@ -30,12 +30,14 @@ export const startTask = async (): Promise<void> => {
     await commonDoing(http);
   }
 
-  if (taskMethod === MetaWorker.Enums.TaskMethod.GENERATE_HEXO_STATIC_FILES) {
+  if (taskMethod === MetaWorker.Enums.TaskMethod.HEXO_GENERATE_DEPLOY) {
     logger.info(`Starting task generateHexoStaticFiles`);
 
     await hexoService.generateHexoStaticFiles();
 
     logger.info(`Task generateHexoStaticFiles finished`);
+
+    // TODO: Deploy
 
     await commonDoing(http);
   }

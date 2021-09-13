@@ -33,14 +33,14 @@ export class HttpRequestService {
   private readonly hostName: string;
   private readonly apiUrl: string;
 
-  async getWorkerTaskFromBackend(): Promise<MetaWorker.Configs.HexoWorkerTackConfig> {
+  async getWorkerTaskFromBackend(): Promise<MetaWorker.Configs.DeployTaskConfig> {
     logger.info('Getting new task config from backend');
 
     const _res = await this.client
       .get(this.apiUrl)
       .set('Authorization', this.authInfo);
 
-    const _data: MetaWorker.Configs.HexoWorkerTackConfig = _res?.body?.data;
+    const _data: MetaWorker.Configs.DeployTaskConfig = _res?.body?.data;
     if (!_data) throw Error('Can not get task config from backend');
     return _data;
   }
