@@ -2,7 +2,7 @@ import { MetaWorker } from '@metaio/worker-model';
 import fs from 'fs/promises';
 import Hexo from 'hexo';
 import HexoInternalConfig from 'hexo/lib/hexo/default_config';
-import { exists } from 'hexo-fs';
+import { exists, existsSync } from 'hexo-fs';
 import path from 'path';
 import process from 'process';
 import resolve from 'resolve';
@@ -15,13 +15,14 @@ import { isEmptyObj } from '../utils';
 
 export class HexoService {
   constructor(
-    private readonly taskConfig: MetaWorker.Configs.GitWorkerTaskConfig, // TOOD: HexoWorkerTaskConfig
+    private readonly taskConfig: MetaWorker.Configs.HexoWorkerTackConfig,
   ) {
     const baseDir = `${taskConfig.taskWorkspace}/${taskConfig.gitReponame}`;
     logger.verbose(`Hexo work dir is: ${baseDir}`, {
       context: HexoService.name,
     });
-    // TODO: Check baseDir exist
+    const isExists = existsSync(baseDir);
+    if (!isExists) throw Error(`Hexo work dir does not exists`);
     this.baseDir = baseDir;
   }
 
@@ -67,7 +68,7 @@ export class HexoService {
   }
 
   private async updateHexoConfigFile(
-    taskConfig: MetaWorker.Configs.GitWorkerTaskConfig,
+    taskConfig: MetaWorker.Configs.HexoWorkerTackConfig,
   ): Promise<void> {
     // Get worker Hexo config
     const defConf = config.get<HexoConfig>('hexo', {} as HexoConfig);
@@ -93,7 +94,7 @@ export class HexoService {
        * if someting happen, use default
        */
       url: taskConfig.domain || 'https://example.com',
-      // theme: taskConfig.themeName, // TODO: Fix it
+      theme: taskConfig.themeName,
     };
 
     const confName = '_config.yml';
