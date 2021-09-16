@@ -1,15 +1,17 @@
+import { BackendTaskService } from '@metaio/worker-common';
 import { MetaWorker } from '@metaio/worker-model';
 
-import { HttpRequestService } from '../api';
+import { getBackendService } from '../api';
 import { HexoService } from '../hexo';
 import { logger, loggerService } from '../logger';
 
 export const startTask = async (): Promise<void> => {
-  const http = new HttpRequestService();
-  const taskConf = await http.getWorkerTaskFromBackend();
+  const http = getBackendService();
+  const taskConf =
+    await http.getWorkerTaskFromBackend<MetaWorker.Configs.DeployTaskConfig>();
   if (!taskConf) throw Error('Can not get task config from backend or gateway');
 
-  const commonDoing = async (http: HttpRequestService): Promise<void> => {
+  const commonDoing = async (http: BackendTaskService): Promise<void> => {
     await http.reportWorkerTaskFinishedToBackend();
     loggerService.final('Task finished');
   };
