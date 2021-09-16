@@ -1,3 +1,4 @@
+import { isProd, isUndefined } from '@metaio/worker-common';
 import fs from 'fs';
 import get from 'lodash.get';
 import has from 'lodash.has';
@@ -6,7 +7,6 @@ import path from 'path';
 import yaml from 'yaml';
 
 import { NoInferType, Path, PathValue } from '../types/config';
-import { isProd, isUndefined } from '../utils';
 
 const YAML_CONFIG_FILENAME = isProd() ? 'config.prod.yaml' : 'config.dev.yaml';
 

@@ -1,8 +1,10 @@
+import { isDeployTask, isPostTask } from '@metaio/worker-common';
 import { MetaWorker } from '@metaio/worker-model';
 import fs from 'fs/promises';
 import Hexo from 'hexo';
 import HexoInternalConfig from 'hexo/lib/hexo/default_config';
 import { exists, existsSync } from 'hexo-fs';
+import os from 'os';
 import path from 'path';
 import process from 'process';
 import resolve from 'resolve';
@@ -10,14 +12,15 @@ import yaml from 'yaml';
 
 import { config } from '../configs';
 import { logger } from '../logger';
+import { MixedTaskConfig } from '../types';
 import { HexoConfig } from '../types/hexo';
 import { isEmptyObj } from '../utils';
 
 export class HexoService {
-  constructor(
-    private readonly taskConfig: MetaWorker.Configs.DeployTaskConfig,
-  ) {
-    const baseDir = `${taskConfig.taskWorkspace}/${taskConfig.gitReponame}`;
+  constructor(private readonly taskConfig: MixedTaskConfig) {
+    const { task, git } = taskConfig;
+    const dirPath = `${task.taskWorkspace}/${git.gitReponame}`;
+    const baseDir = `${path.join(os.tmpdir(), dirPath)}`;
     logger.verbose(`Hexo work dir is: ${baseDir}`, {
       context: HexoService.name,
     });
@@ -78,23 +81,23 @@ export class HexoService {
       });
 
     // Create user Hexo config from taskConfig
+    const { site, user, theme } = taskConfig;
     const userConf: Partial<HexoConfig> = {
-      title: taskConfig.title,
-      subtitle: taskConfig.subtitle || '',
-      description: taskConfig.description || '',
-      author:
-        taskConfig.author || taskConfig.username || taskConfig.nickname || '',
-      keywords: taskConfig.keywords || [],
+      title: site.title,
+      subtitle: site.subtitle || '',
+      description: site.description || '',
+      author: site.author || user.username || user.nickname || '',
+      keywords: site.keywords || [],
       // No favicon on _config.yml(taskConfig.favicon)
-      language: taskConfig.language || 'en',
-      timezone: taskConfig.timezone || 'Asia/Shanghai', // If support UTC + or - will change it
+      language: site.language || 'en',
+      timezone: site.timezone || 'Asia/Shanghai', // If support UTC + or - will change it
       /**
        * On our platform, it always has a domain,
        * but Hexo not allow empty url,
        * if someting happen, use default
        */
-      url: taskConfig.domain || 'https://example.com',
-      theme: taskConfig.themeName,
+      url: site.domain || 'https://example.com',
+      theme: theme.themeName,
     };
 
     const confName = '_config.yml';
@@ -158,9 +161,25 @@ export class HexoService {
     }
   }
 
+  private async updateHexoThemeConfigFile(
+    taskConfig: MetaWorker.Configs.DeployTaskConfig,
+  ): Promise<void> {
+    // TODO: update Hexo theme config file
+  }
+
+  private async createHexoPostFile(
+    taskConfig: MetaWorker.Configs.PostTaskConfig,
+  ): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   async init(args?: Hexo.InstanceOptions): Promise<void> {
-    // Update _config.yml before Hexo init
-    await this.updateHexoConfigFile(this.taskConfig);
+    if (isDeployTask(this.taskConfig)) {
+      // Update _config.yml before Hexo init
+      await this.updateHexoConfigFile(
+        this.taskConfig as MetaWorker.Configs.DeployTaskConfig,
+      );
+    }
 
     const _hexo = await this.loadLocalHexoModule(this.baseDir, args);
 
@@ -205,8 +224,14 @@ export class HexoService {
   }
 
   async updateHexoConfigFiles(): Promise<void> {
-    await this.updateHexoConfigFile(this.taskConfig);
-    // TODO: update Hexo theme config file
+    if (!isDeployTask(this.taskConfig))
+      throw new Error(`Task config is not for deploy`);
+    await this.updateHexoConfigFile(
+      this.taskConfig as MetaWorker.Configs.DeployTaskConfig,
+    );
+    await this.updateHexoThemeConfigFile(
+      this.taskConfig as MetaWorker.Configs.DeployTaskConfig,
+    );
   }
 
   async generateHexoStaticFiles(): Promise<void> {
@@ -218,5 +243,13 @@ export class HexoService {
       await this.inst.exit(error);
       throw error;
     }
+  }
+
+  async createHexoPostFiles(): Promise<void> {
+    if (!isPostTask(this.taskConfig))
+      throw new Error('Task config is not for create post');
+    await this.createHexoPostFile(
+      this.taskConfig as MetaWorker.Configs.PostTaskConfig,
+    );
   }
 }

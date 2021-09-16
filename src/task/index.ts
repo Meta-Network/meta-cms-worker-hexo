@@ -16,7 +16,7 @@ export const startTask = async (): Promise<void> => {
     loggerService.final('Task finished');
   };
 
-  const { taskId, taskMethod } = taskConf;
+  const { taskId, taskMethod } = taskConf?.task;
   logger.info(`Task id ${taskId} start, method ${taskMethod}`);
 
   const hexoService = new HexoService(taskConf);
@@ -42,5 +42,13 @@ export const startTask = async (): Promise<void> => {
     // TODO: Deploy
 
     await commonDoing(http);
+  }
+
+  if (taskMethod === MetaWorker.Enums.TaskMethod.HEXO_CREATE_POST) {
+    logger.info(`Starting task createHexoPostFile`);
+
+    await hexoService.createHexoPostFiles();
+
+    logger.info(`Task createHexoPostFile finished`);
   }
 };
