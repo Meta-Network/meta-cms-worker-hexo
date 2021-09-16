@@ -292,3 +292,17 @@ export interface HexoConfig {
    */
   readonly ignore: string[];
 }
+
+export type HexoFrontMatter = {
+  layout?: string;
+  title?: string;
+  date?: string | number;
+  updated?: string | number;
+  comments?: boolean;
+  tags?: string[];
+  categories?: string;
+  permalink?: string;
+  excerpt?: string;
+  disableNunjucks?: boolean;
+  lang?: string;
+};

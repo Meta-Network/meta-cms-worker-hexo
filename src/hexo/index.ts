@@ -13,7 +13,7 @@ import yaml from 'yaml';
 import { config } from '../configs';
 import { logger } from '../logger';
 import { MixedTaskConfig } from '../types';
-import { HexoConfig } from '../types/hexo';
+import { HexoConfig, HexoFrontMatter } from '../types/hexo';
 import { isEmptyObj } from '../utils';
 
 export class HexoService {
@@ -170,7 +170,28 @@ export class HexoService {
   private async createHexoPostFile(
     taskConfig: MetaWorker.Configs.PostTaskConfig,
   ): Promise<void> {
-    throw new Error('Method not implemented.');
+    const { post } = taskConfig;
+    try {
+      const postData: Hexo.Post.Data & HexoFrontMatter = {
+        title: post.title,
+        date: post.createdAt || post.updatedAt || Date.now(),
+        updated: post.updatedAt || '',
+        tags: post.tags || [],
+        categories: post.category || '',
+        excerpt: post.summary || '',
+      };
+      logger.info(`Create post file, title: ${post.title}`, {
+        context: HexoService.name,
+      });
+      const _create = await this.inst.post.create(postData);
+      logger.info(`Successfully create post file: ${JSON.stringify(_create)}`, {
+        context: HexoService.name,
+      });
+      await this.inst.exit();
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
+    }
   }
 
   async init(args?: Hexo.InstanceOptions): Promise<void> {
