@@ -3,6 +3,7 @@
 
 # ENV File
 /.env.*
+!/.env.example
 /config.*
 !/config.example.*
 

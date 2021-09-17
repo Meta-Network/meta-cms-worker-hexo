@@ -22,9 +22,10 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@metaio/worker-common": "^1.1.0",
+    "@metaio/worker-common": "^1.2.1",
     "@metaio/worker-model": "1.2.0",
     "cron": "^1.8.2",
+    "dotenv-flow": "^3.2.0",
     "fs-extra": "^10.0.0",
     "hexo": "^5.4.0",
     "hexo-fs": "^3.1.0",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@types/cron": "^1.7.3",
+    "@types/dotenv-flow": "^3.2.0",
     "@types/fs-extra": "^9.0.12",
     "@types/hexo": "^3.8.7",
     "@types/hexo-fs": "^0.2.10",

@@ -4,11 +4,11 @@ import { MetaWorker } from '@metaio/worker-model';
 import { getBackendService } from '../api';
 import { HexoService } from '../hexo';
 import { logger, loggerService } from '../logger';
+import { MixedTaskConfig } from '../types';
 
 export const startTask = async (): Promise<void> => {
   const http = getBackendService();
-  const taskConf =
-    await http.getWorkerTaskFromBackend<MetaWorker.Configs.DeployTaskConfig>();
+  const taskConf = await http.getWorkerTaskFromBackend<MixedTaskConfig>();
   if (!taskConf) throw Error('Can not get task config from backend or gateway');
 
   const commonDoing = async (http: BackendTaskService): Promise<void> => {
