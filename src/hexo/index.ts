@@ -197,9 +197,7 @@ export class HexoService {
   async init(args?: Hexo.InstanceOptions): Promise<void> {
     if (isDeployTask(this.taskConfig)) {
       // Update _config.yml before Hexo init
-      await this.updateHexoConfigFile(
-        this.taskConfig as MetaWorker.Configs.DeployTaskConfig,
-      );
+      await this.updateHexoConfigFile(this.taskConfig);
     }
 
     const _hexo = await this.loadLocalHexoModule(this.baseDir, args);
@@ -247,12 +245,8 @@ export class HexoService {
   async updateHexoConfigFiles(): Promise<void> {
     if (!isDeployTask(this.taskConfig))
       throw new Error(`Task config is not for deploy`);
-    await this.updateHexoConfigFile(
-      this.taskConfig as MetaWorker.Configs.DeployTaskConfig,
-    );
-    await this.updateHexoThemeConfigFile(
-      this.taskConfig as MetaWorker.Configs.DeployTaskConfig,
-    );
+    await this.updateHexoConfigFile(this.taskConfig);
+    await this.updateHexoThemeConfigFile(this.taskConfig);
   }
 
   async generateHexoStaticFiles(): Promise<void> {
@@ -269,8 +263,6 @@ export class HexoService {
   async createHexoPostFiles(): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create post');
-    await this.createHexoPostFile(
-      this.taskConfig as MetaWorker.Configs.PostTaskConfig,
-    );
+    await this.createHexoPostFile(this.taskConfig);
   }
 }
