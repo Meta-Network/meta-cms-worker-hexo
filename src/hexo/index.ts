@@ -1,5 +1,6 @@
 import { isDeployTask, isPostTask } from '@metaio/worker-common';
 import { MetaWorker } from '@metaio/worker-model';
+import childProcess from 'child_process';
 import fs from 'fs/promises';
 import Hexo from 'hexo';
 import HexoInternalConfig from 'hexo/lib/hexo/default_config';
@@ -43,6 +44,50 @@ export class HexoService {
       logger.verbose(`Hexo generate callback value: ${val}`, {
         context: HexoService.name,
       });
+    }
+  }
+
+  private async execChildProcess(cmd: string): Promise<boolean> {
+    const promise = new Promise<boolean>((res, rej) => {
+      const process = childProcess.exec(cmd, { cwd: this.baseDir });
+      process.on('exit', (code, sig) => {
+        logger.info(
+          `Child process exec ${cmd} return code ${code} and signal ${sig}`,
+          {
+            context: HexoService.name,
+          },
+        );
+        res(true);
+      });
+      process.on('error', (err) => rej(err));
+    });
+    return await promise;
+  }
+
+  private async installNodeModules(): Promise<void> {
+    logger.info(`Installing node modules for ${this.baseDir}`, {
+      context: HexoService.name,
+    });
+    const yarnLock = path.join(this.baseDir, 'yarn.lock');
+    const isYarn = existsSync(yarnLock);
+    if (isYarn) {
+      logger.info(`Find yarn lockfile, use Yarn to install modules`, {
+        context: HexoService.name,
+      });
+      const process = await this.execChildProcess(
+        'yarn install --production=false --frozen-lockfile',
+      );
+      if (process)
+        logger.info(`Successfully install node modules`, {
+          context: HexoService.name,
+        });
+    } else {
+      logger.info(`Use NPM to install modules`, { context: HexoService.name });
+      const process = await this.execChildProcess('npm ci');
+      if (process)
+        logger.info(`Successfully install node modules`, {
+          context: HexoService.name,
+        });
     }
   }
 
@@ -200,6 +245,7 @@ export class HexoService {
       await this.updateHexoConfigFile(this.taskConfig);
     }
 
+    await this.installNodeModules();
     const _hexo = await this.loadLocalHexoModule(this.baseDir, args);
 
     await _hexo.init();
