@@ -15,7 +15,7 @@ import { config } from '../configs';
 import { logger } from '../logger';
 import { MixedTaskConfig } from '../types';
 import { HexoConfig, HexoFrontMatter } from '../types/hexo';
-import { isEmptyObj } from '../utils';
+import { formatUrl, isEmptyObj } from '../utils';
 
 export class HexoService {
   constructor(private readonly taskConfig: MixedTaskConfig) {
@@ -141,7 +141,7 @@ export class HexoService {
        * but Hexo not allow empty url,
        * if someting happen, use default
        */
-      url: site.domain || 'https://example.com',
+      url: formatUrl(site.domain) || 'https://example.com',
       theme: theme.themeName,
     };
 
