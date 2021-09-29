@@ -13,23 +13,23 @@ import yaml from 'yaml';
 
 import { config } from '../configs';
 import { logger } from '../logger';
-import { MixedTaskConfig } from '../types';
+import { LogContext, MixedTaskConfig } from '../types';
 import { HexoConfig, HexoFrontMatter, HexoPostCreate } from '../types/hexo';
 import { formatUrl, isEmptyObj } from '../utils';
 
 export class HexoService {
   constructor(private readonly taskConfig: MixedTaskConfig) {
+    this.context = { context: HexoService.name };
     const { task, git } = taskConfig;
     const dirPath = `${task.taskWorkspace}/${git.gitReponame}`;
     const baseDir = `${path.join(os.tmpdir(), dirPath)}`;
-    logger.verbose(`Hexo work dir is: ${baseDir}`, {
-      context: HexoService.name,
-    });
+    logger.verbose(`Hexo work dir is: ${baseDir}`, this.context);
     const isExists = existsSync(baseDir);
     if (!isExists) throw Error(`Hexo work dir does not exists`);
     this.baseDir = baseDir;
   }
 
+  private readonly context: LogContext;
   private readonly baseDir: string;
   private inst: Hexo;
 
@@ -37,13 +37,9 @@ export class HexoService {
     if (process.env.DEBUG)
       console.log('\x1B[35mhexoGenerateCallback:\x1B[39m', err, val);
     if (err) {
-      logger.error(`Hexo generate callback error:`, err, {
-        context: HexoService.name,
-      });
+      logger.error(`Hexo generate callback error:`, err, this.context);
     } else {
-      logger.verbose(`Hexo generate callback value: ${val}`, {
-        context: HexoService.name,
-      });
+      logger.verbose(`Hexo generate callback value: ${val}`, this.context);
     }
   }
 
@@ -53,9 +49,7 @@ export class HexoService {
       process.on('exit', (code, sig) => {
         logger.info(
           `Child process exec ${cmd} return code ${code} and signal ${sig}`,
-          {
-            context: HexoService.name,
-          },
+          this.context,
         );
         res(true);
       });
@@ -65,29 +59,24 @@ export class HexoService {
   }
 
   private async installNodeModules(): Promise<void> {
-    logger.info(`Installing node modules for ${this.baseDir}`, {
-      context: HexoService.name,
-    });
+    logger.info(`Installing node modules for ${this.baseDir}`, this.context);
     const yarnLock = path.join(this.baseDir, 'yarn.lock');
     const isYarn = existsSync(yarnLock);
     if (isYarn) {
-      logger.info(`Find yarn lockfile, use Yarn to install modules`, {
-        context: HexoService.name,
-      });
+      logger.info(
+        `Find yarn lockfile, use Yarn to install modules`,
+        this.context,
+      );
       const process = await this.execChildProcess(
         'yarn install --production=false --frozen-lockfile',
       );
       if (process)
-        logger.info(`Successfully install node modules`, {
-          context: HexoService.name,
-        });
+        logger.info(`Successfully install node modules`, this.context);
     } else {
-      logger.info(`Use NPM to install modules`, { context: HexoService.name });
+      logger.info(`Use NPM to install modules`, this.context);
       const process = await this.execChildProcess('npm ci');
       if (process)
-        logger.info(`Successfully install node modules`, {
-          context: HexoService.name,
-        });
+        logger.info(`Successfully install node modules`, this.context);
     }
   }
 
@@ -98,19 +87,17 @@ export class HexoService {
     const arg: Hexo.InstanceOptions = { ...args, debug: !!process.env.DEBUG };
     logger.verbose(
       `Try load Hexo module from: ${path}, args: ${JSON.stringify(arg)}`,
-      { context: HexoService.name },
+      this.context,
     );
 
     try {
       const modulePath = resolve.sync('hexo', { basedir: path });
       const localHexo = await require(modulePath);
-      logger.info(`Use local Hexo module`, { context: HexoService.name });
+      logger.info(`Use local Hexo module`, this.context);
       return new localHexo(path, arg) as Hexo;
     } catch (error) {
-      logger.error(`Local hexo loading failed in ${path}`, error, {
-        context: HexoService.name,
-      });
-      logger.info(`Use worker Hexo module`, { context: HexoService.name });
+      logger.error(`Local hexo loading failed in ${path}`, error, this.context);
+      logger.info(`Use worker Hexo module`, this.context);
       return new Hexo(path, arg);
     }
   }
@@ -121,9 +108,10 @@ export class HexoService {
     // Get worker Hexo config
     const defConf = config.get<HexoConfig>('hexo', {} as HexoConfig);
     if (isEmptyObj(defConf))
-      logger.warn(`Can not find the default Hexo config, will ignore it`, {
-        context: HexoService.name,
-      });
+      logger.warn(
+        `Can not find the default Hexo config, will ignore it`,
+        this.context,
+      );
 
     // Create user Hexo config from taskConfig
     const { site, user, theme } = taskConfig;
@@ -152,7 +140,7 @@ export class HexoService {
     if (!isExists) {
       logger.warn(
         `Can not find the Hexo config in ${this.baseDir}, will create it`,
-        { context: HexoService.name },
+        this.context,
       );
       try {
         const conf: HexoConfig = {
@@ -163,15 +151,13 @@ export class HexoService {
         const yamlStr = yaml.stringify(conf);
         const data = new Uint8Array(Buffer.from(yamlStr));
         await fs.writeFile(confPath, data, { encoding: 'utf8' });
-        logger.info(`Write ${confPath} successfully`, {
-          context: HexoService.name,
-        });
+        logger.info(`Write ${confPath} successfully`, this.context);
         return;
       } catch (error) {
         logger.error(
           `Can not write Hexo config file, path: ${confPath}`,
           error,
-          { context: HexoService.name },
+          this.context,
         );
         throw error;
       }
@@ -180,9 +166,7 @@ export class HexoService {
     if (isExists) {
       logger.verbose(
         `Found the Hexo config in ${this.baseDir}, will update it`,
-        {
-          context: HexoService.name,
-        },
+        this.context,
       );
       try {
         const confRawData = await fs.readFile(confPath, 'utf8');
@@ -191,15 +175,13 @@ export class HexoService {
         const yamlStr = yaml.stringify(confNew);
         const data = new Uint8Array(Buffer.from(yamlStr));
         await fs.writeFile(confPath, data, { encoding: 'utf8' });
-        logger.info(`Update ${confPath} successfully`, {
-          context: HexoService.name,
-        });
+        logger.info(`Update ${confPath} successfully`, this.context);
         return;
       } catch (error) {
         logger.error(
           `Can not update Hexo config file, path: ${confPath}`,
           error,
-          { context: HexoService.name },
+          this.context,
         );
         return;
       }
@@ -225,19 +207,16 @@ export class HexoService {
         categories: post.category || '',
         excerpt: post.summary || '',
       };
-      logger.info(`Create post file, title: ${post.title}`, {
-        context: HexoService.name,
-      });
+      logger.info(`Create post file, title: ${post.title}`, this.context);
       const _create = (await this.inst.post.create(postData)) as unknown;
-      logger.info(`Successfully create post file: ${JSON.stringify(_create)}`, {
-        context: HexoService.name,
-      });
+      logger.info(
+        `Successfully create post file: ${JSON.stringify(_create)}`,
+        this.context,
+      );
       await this.inst.exit();
       const { path } = _create as HexoPostCreate;
       await fs.appendFile(path, `\n${post.source}\n`);
-      logger.info(`Successfully write source content to ${path}`, {
-        context: HexoService.name,
-      });
+      logger.info(`Successfully write source content to ${path}`, this.context);
     } catch (error) {
       await this.inst.exit(error);
       throw error;
@@ -254,40 +233,34 @@ export class HexoService {
     const _hexo = await this.loadLocalHexoModule(this.baseDir, args);
 
     await _hexo.init();
-    logger.info(`Hexo version: ${_hexo.env.version}`, {
-      context: HexoService.name,
-    });
-    logger.info(`Hexo base directory: ${_hexo.base_dir}`, {
-      context: HexoService.name,
-    });
-    logger.info(`Hexo public directory: ${_hexo.public_dir}`, {
-      context: HexoService.name,
-    });
-    logger.info(`Hexo source directory: ${_hexo.source_dir}`, {
-      context: HexoService.name,
-    });
-    logger.info(`Hexo config file path: ${_hexo.config_path}`, {
-      context: HexoService.name,
-    });
-    logger.info(`Hexo has been initialized`, { context: HexoService.name });
+    logger.info(`Hexo version: ${_hexo.env.version}`, this.context);
+    logger.info(`Hexo base directory: ${_hexo.base_dir}`, this.context);
+    logger.info(`Hexo public directory: ${_hexo.public_dir}`, this.context);
+    logger.info(`Hexo source directory: ${_hexo.source_dir}`, this.context);
+    logger.info(`Hexo config file path: ${_hexo.config_path}`, this.context);
+    logger.info(`Hexo has been initialized`, this.context);
 
+    _hexo.on('ready', () => {
+      logger.verbose('Hexo initialization finished', this.context);
+    });
+    _hexo.on('new', (post) => {
+      logger.verbose(`Create new post ${post.path}`, this.context);
+    });
+    _hexo.on('processBefore', () => {
+      logger.verbose('Hexo process started', this.context);
+    });
+    _hexo.on('processAfter', () => {
+      logger.verbose('Hexo process finished', this.context);
+    });
     _hexo.on('generateBefore', () => {
-      logger.verbose('Hexo event on generateBefore', {
-        context: HexoService.name,
-      });
       const postCount = _hexo.locals.get('posts').count();
-      logger.info(`Found ${postCount} Hexo posts`, {
-        context: HexoService.name,
-      });
+      logger.verbose(`Found ${postCount} Hexo posts`, this.context);
     });
     _hexo.on('generateAfter', () => {
-      logger.verbose('Hexo event on generateAfter', {
-        context: HexoService.name,
-      });
+      logger.verbose('Hexo generate finished', this.context);
     });
     _hexo.on('exit', () => {
-      logger.verbose('Hexo event on exit', { context: HexoService.name });
-      logger.info(`Hexo exited`, { context: HexoService.name });
+      logger.verbose(`Hexo exited`, this.context);
     });
 
     this.inst = _hexo;
@@ -301,7 +274,7 @@ export class HexoService {
   }
 
   async generateHexoStaticFiles(): Promise<void> {
-    logger.info(`Generating Hexo static files`, { context: HexoService.name });
+    logger.info(`Generating Hexo static files`, this.context);
     try {
       await this.inst.call('generate', this.hexoGenerateCallback);
       await this.inst.exit();
