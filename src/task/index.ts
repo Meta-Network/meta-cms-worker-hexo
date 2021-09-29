@@ -51,4 +51,12 @@ export const startTask = async (): Promise<void> => {
 
     logger.info(`Task createHexoPostFile finished`);
   }
+
+  if (taskMethod === MetaWorker.Enums.TaskMethod.HEXO_UPDATE_POST) {
+    logger.info(`Starting task createHexoPostFile, replase true`);
+
+    await hexoService.createHexoPostFiles(true);
+
+    logger.info(`Task createHexoPostFile finished`);
+  }
 };

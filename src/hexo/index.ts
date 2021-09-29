@@ -196,9 +196,11 @@ export class HexoService {
 
   private async createHexoPostFile(
     taskConfig: MetaWorker.Configs.PostTaskConfig,
+    replace: boolean,
   ): Promise<void> {
     const { post } = taskConfig;
     try {
+      if (replace) logger.info(`Hexo create replace mode on`, this.context);
       const postData: Hexo.Post.Data & HexoFrontMatter = {
         title: post.title,
         date: post.createdAt || post.updatedAt || Date.now(),
@@ -208,7 +210,10 @@ export class HexoService {
         excerpt: post.summary || '',
       };
       logger.info(`Create post file, title: ${post.title}`, this.context);
-      const _create = (await this.inst.post.create(postData)) as unknown;
+      const _create = (await this.inst.post.create(
+        postData,
+        replace,
+      )) as unknown;
       logger.info(
         `Successfully create post file: ${JSON.stringify(_create)}`,
         this.context,
@@ -284,9 +289,9 @@ export class HexoService {
     }
   }
 
-  async createHexoPostFiles(): Promise<void> {
+  async createHexoPostFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create post');
-    await this.createHexoPostFile(this.taskConfig);
+    await this.createHexoPostFile(this.taskConfig, update);
   }
 }
