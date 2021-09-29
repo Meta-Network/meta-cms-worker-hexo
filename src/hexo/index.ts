@@ -14,7 +14,7 @@ import yaml from 'yaml';
 import { config } from '../configs';
 import { logger } from '../logger';
 import { MixedTaskConfig } from '../types';
-import { HexoConfig, HexoFrontMatter } from '../types/hexo';
+import { HexoConfig, HexoFrontMatter, HexoPostCreate } from '../types/hexo';
 import { formatUrl, isEmptyObj } from '../utils';
 
 export class HexoService {
@@ -228,11 +228,16 @@ export class HexoService {
       logger.info(`Create post file, title: ${post.title}`, {
         context: HexoService.name,
       });
-      const _create = await this.inst.post.create(postData);
+      const _create = (await this.inst.post.create(postData)) as unknown;
       logger.info(`Successfully create post file: ${JSON.stringify(_create)}`, {
         context: HexoService.name,
       });
       await this.inst.exit();
+      const { path } = _create as HexoPostCreate;
+      await fs.appendFile(path, `\n${post.source}\n`);
+      logger.info(`Successfully write source content to ${path}`, {
+        context: HexoService.name,
+      });
     } catch (error) {
       await this.inst.exit(error);
       throw error;

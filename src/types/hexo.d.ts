@@ -306,3 +306,8 @@ export type HexoFrontMatter = {
   disableNunjucks?: boolean;
   lang?: string;
 };
+
+export type HexoPostCreate = {
+  path: string;
+  content: string;
+};
