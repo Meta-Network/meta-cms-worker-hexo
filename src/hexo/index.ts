@@ -37,9 +37,13 @@ export class HexoService {
     if (process.env.DEBUG)
       console.log('\x1B[35mhexoGenerateCallback:\x1B[39m', err, val);
     if (err) {
-      logger.error(`Hexo generate callback error:`, err, this.context);
+      logger.error(`Hexo generate callback error:`, err, {
+        context: HexoService.name,
+      });
     } else {
-      logger.verbose(`Hexo generate callback value: ${val}`, this.context);
+      logger.verbose(`Hexo generate callback value: ${val}`, {
+        context: HexoService.name,
+      });
     }
   }
 
@@ -281,7 +285,7 @@ export class HexoService {
   async generateHexoStaticFiles(): Promise<void> {
     logger.info(`Generating Hexo static files`, this.context);
     try {
-      await this.inst.call('generate', this.hexoGenerateCallback);
+      await this.inst.call('generate', this.hexoGenerateCallback); // maybe use `.bind(this)`
       await this.inst.exit();
     } catch (error) {
       await this.inst.exit(error);
