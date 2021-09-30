@@ -314,9 +314,11 @@ export class HexoService {
     logger.info(`Generating Hexo static files`, this.context);
     const _pm = this.guessPackageManager(this.baseDir);
     if (_pm === 'yarn') {
+      await this.execChildProcess('yarn run hexo clean');
       await this.execChildProcess('yarn run hexo generate');
     }
     if (_pm === 'npm') {
+      await this.execChildProcess('npm run hexo clean');
       await this.execChildProcess('npm run hexo generate');
     }
   }
