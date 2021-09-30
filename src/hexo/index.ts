@@ -59,11 +59,14 @@ export class HexoService {
         logger.error(data, this.context);
       });
       process.on('exit', (code, sig) => {
-        logger.info(
-          `Child process exec ${cmd} return code ${code} and signal ${sig}`,
-          this.context,
-        );
-        res(true);
+        if (code === 0) {
+          logger.info(
+            `Child process exec '${cmd}' with exit code ${code} and signal ${sig}`,
+            this.context,
+          );
+          res(true);
+        }
+        rej(`Child process exec '${cmd}' failed with exit code ${code}`);
       });
       process.on('error', (err) => rej(err));
     });
