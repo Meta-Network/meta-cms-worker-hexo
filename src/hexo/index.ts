@@ -33,23 +33,31 @@ export class HexoService {
   private readonly baseDir: string;
   private inst: Hexo;
 
-  private hexoGenerateCallback(err: Error, val: unknown): void {
-    if (process.env.DEBUG)
-      console.log('\x1B[35mhexoGenerateCallback:\x1B[39m', err, val);
-    if (err) {
-      logger.error(`Hexo generate callback error:`, err, {
-        context: HexoService.name,
-      });
-    } else {
-      logger.verbose(`Hexo generate callback value: ${val}`, {
-        context: HexoService.name,
-      });
-    }
-  }
+  // private hexoGenerateCallback(err: Error, val: unknown): void {
+  //   if (process.env.DEBUG)
+  //     console.log('\x1B[35mhexoGenerateCallback:\x1B[39m', err, val);
+  //   if (err) {
+  //     logger.error(`Hexo generate callback error:`, err, {
+  //       context: HexoService.name,
+  //     });
+  //   } else {
+  //     logger.verbose(`Hexo generate callback value: ${val}`, {
+  //       context: HexoService.name,
+  //     });
+  //   }
+  // }
 
   private async execChildProcess(cmd: string): Promise<boolean> {
     const promise = new Promise<boolean>((res, rej) => {
       const process = childProcess.exec(cmd, { cwd: this.baseDir });
+      process.stdout.setEncoding('utf-8');
+      process.stderr.setEncoding('utf-8');
+      process.stdout.on('data', (data) => {
+        logger.verbose(data, this.context);
+      });
+      process.stderr.on('data', (data) => {
+        logger.error(data, this.context);
+      });
       process.on('exit', (code, sig) => {
         logger.info(
           `Child process exec ${cmd} return code ${code} and signal ${sig}`,
@@ -62,22 +70,28 @@ export class HexoService {
     return await promise;
   }
 
-  private async installNodeModules(): Promise<void> {
-    logger.info(`Installing node modules for ${this.baseDir}`, this.context);
-    const yarnLock = path.join(this.baseDir, 'yarn.lock');
+  private guessPackageManager(findPath: string): 'npm' | 'yarn' {
+    const yarnLock = path.join(findPath, 'yarn.lock');
     const isYarn = existsSync(yarnLock);
     if (isYarn) {
-      logger.info(
-        `Find yarn lockfile, use Yarn to install modules`,
-        this.context,
-      );
+      logger.info(`Find yarn lockfile, use Yarn package manager`, this.context);
+      return 'yarn';
+    }
+    logger.info(`Use NPM package manager`, this.context);
+    return 'npm';
+  }
+
+  private async installNodeModules(): Promise<void> {
+    logger.info(`Installing node modules for ${this.baseDir}`, this.context);
+    const _pm = this.guessPackageManager(this.baseDir);
+    if (_pm === 'yarn') {
       const process = await this.execChildProcess(
         'yarn install --production=false --frozen-lockfile',
       );
       if (process)
         logger.info(`Successfully install node modules`, this.context);
-    } else {
-      logger.info(`Use NPM to install modules`, this.context);
+    }
+    if (_pm === 'npm') {
       const process = await this.execChildProcess('npm ci');
       if (process)
         logger.info(`Successfully install node modules`, this.context);
@@ -282,14 +296,25 @@ export class HexoService {
     await this.updateHexoThemeConfigFile(this.taskConfig);
   }
 
+  // async generateHexoStaticFiles(): Promise<void> {
+  //   logger.info(`Generating Hexo static files`, this.context);
+  //   try {
+  //     await this.inst.call('generate', this.hexoGenerateCallback); // maybe use `.bind(this)`
+  //     await this.inst.exit();
+  //   } catch (error) {
+  //     await this.inst.exit(error);
+  //     throw error;
+  //   }
+  // }
+
   async generateHexoStaticFiles(): Promise<void> {
     logger.info(`Generating Hexo static files`, this.context);
-    try {
-      await this.inst.call('generate', this.hexoGenerateCallback); // maybe use `.bind(this)`
-      await this.inst.exit();
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
+    const _pm = this.guessPackageManager(this.baseDir);
+    if (_pm === 'yarn') {
+      await this.execChildProcess('yarn run hexo generate');
+    }
+    if (_pm === 'npm') {
+      await this.execChildProcess('npm run hexo generate');
     }
   }
 
