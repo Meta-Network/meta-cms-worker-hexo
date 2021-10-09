@@ -25,6 +25,5 @@ WORKDIR /opt/MetaNetwork/Worker-Hexo
 COPY . .
 RUN yarn install --frozen-lockfile && yarn run build
 
-# ENV NODE_ENV production
-# CMD yarn run start:prod
-CMD yarn run start:debug:docker
+ENV NODE_ENV production
+CMD yarn run start:prod
