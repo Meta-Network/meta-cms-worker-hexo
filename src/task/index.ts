@@ -39,8 +39,6 @@ export const startTask = async (): Promise<void> => {
 
     logger.info(`Task generateHexoStaticFiles finished`);
 
-    // TODO: Deploy
-
     await commonDoing(http);
   }
 
