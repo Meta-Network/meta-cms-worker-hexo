@@ -8,8 +8,6 @@ import { startTask } from './task';
 async function bootstrap(): Promise<void> {
   const http = getBackendService();
   logger.info('App started');
-  console.log(process.env);
-  logger.info(JSON.stringify(process.env));
   await http.reportWorkerTaskStartedToBackend();
 
   timer
