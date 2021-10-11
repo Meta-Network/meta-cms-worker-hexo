@@ -1,4 +1,4 @@
-import { BackendTaskService } from '@metaio/worker-common';
+import { BackendTaskService, checkAllowedTasks } from '@metaio/worker-common';
 import { MetaWorker } from '@metaio/worker-model';
 
 import { getBackendService } from '../api';
@@ -7,6 +7,13 @@ import { logger, loggerService } from '../logger';
 import { MixedTaskConfig } from '../types';
 
 export const startTask = async (): Promise<void> => {
+  const allowedTasks: MetaWorker.Enums.TaskMethod[] = [
+    MetaWorker.Enums.TaskMethod.HEXO_UPDATE_CONFIG,
+    MetaWorker.Enums.TaskMethod.HEXO_GENERATE_DEPLOY,
+    MetaWorker.Enums.TaskMethod.HEXO_CREATE_POST,
+    MetaWorker.Enums.TaskMethod.HEXO_UPDATE_POST,
+  ];
+
   const http = getBackendService();
   const taskConf = await http.getWorkerTaskFromBackend<MixedTaskConfig>();
   if (!taskConf) throw Error('Can not get task config from backend or gateway');
@@ -18,6 +25,8 @@ export const startTask = async (): Promise<void> => {
 
   const { taskId, taskMethod } = taskConf?.task;
   logger.info(`Task id ${taskId} start, method ${taskMethod}`);
+
+  checkAllowedTasks(taskMethod, allowedTasks);
 
   const hexoService = new HexoService(taskConf);
   await hexoService.init();
