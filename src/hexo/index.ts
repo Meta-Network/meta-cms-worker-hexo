@@ -227,7 +227,7 @@ export class HexoService {
         date: post.createdAt || post.updatedAt || Date.now(),
         updated: post.updatedAt || '',
         tags: post.tags || [],
-        categories: post.category || '',
+        categories: post.categories || [],
         excerpt: post.summary || '',
       };
       logger.info(`Create post file, title: ${post.title}`, this.context);

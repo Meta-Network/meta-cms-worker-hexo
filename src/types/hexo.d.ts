@@ -300,7 +300,7 @@ export type HexoFrontMatter = {
   updated?: string | number;
   comments?: boolean;
   tags?: string[];
-  categories?: string;
+  categories?: string[];
   permalink?: string;
   excerpt?: string;
   disableNunjucks?: boolean;
