@@ -33,20 +33,6 @@ export class HexoService {
   private readonly baseDir: string;
   private inst: Hexo;
 
-  // private hexoGenerateCallback(err: Error, val: unknown): void {
-  //   if (process.env.DEBUG)
-  //     console.log('\x1B[35mhexoGenerateCallback:\x1B[39m', err, val);
-  //   if (err) {
-  //     logger.error(`Hexo generate callback error:`, err, {
-  //       context: HexoService.name,
-  //     });
-  //   } else {
-  //     logger.verbose(`Hexo generate callback value: ${val}`, {
-  //       context: HexoService.name,
-  //     });
-  //   }
-  // }
-
   private async execChildProcess(cmd: string): Promise<boolean> {
     const promise = new Promise<boolean>((res, rej) => {
       const process = childProcess.exec(cmd, { cwd: this.baseDir });
@@ -216,10 +202,9 @@ export class HexoService {
   }
 
   private async createHexoPostFile(
-    taskConfig: MetaWorker.Configs.PostTaskConfig,
+    post: MetaWorker.Info.Post,
     replace: boolean,
   ): Promise<void> {
-    const { post } = taskConfig;
     try {
       if (replace) logger.info(`Hexo create replace mode on`, this.context);
       const postData: Hexo.Post.Data & HexoFrontMatter = {
@@ -299,17 +284,6 @@ export class HexoService {
     await this.updateHexoThemeConfigFile(this.taskConfig);
   }
 
-  // async generateHexoStaticFiles(): Promise<void> {
-  //   logger.info(`Generating Hexo static files`, this.context);
-  //   try {
-  //     await this.inst.call('generate', this.hexoGenerateCallback); // maybe use `.bind(this)`
-  //     await this.inst.exit();
-  //   } catch (error) {
-  //     await this.inst.exit(error);
-  //     throw error;
-  //   }
-  // }
-
   async generateHexoStaticFiles(): Promise<void> {
     logger.info(`Generating Hexo static files`, this.context);
     const _pm = this.guessPackageManager(this.baseDir);
@@ -326,6 +300,7 @@ export class HexoService {
   async createHexoPostFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create post');
-    await this.createHexoPostFile(this.taskConfig, update);
+    const { post } = this.taskConfig;
+    await this.createHexoPostFile(post, update);
   }
 }
