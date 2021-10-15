@@ -335,20 +335,44 @@ export class HexoService {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create post');
     const { post } = this.taskConfig;
-    await this.createHexoPostFile(post, update, 'post');
+    if (Array.isArray(post)) {
+      post.forEach(async (_post, index) => {
+        logger.info(`Create Hexo post file queue ${index + 1}`, this.context);
+        await this.createHexoPostFile(_post, update, 'post');
+      });
+    } else {
+      logger.info(`Create single Hexo post file`, this.context);
+      await this.createHexoPostFile(post, update, 'post');
+    }
   }
 
   async createHexoDraftFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create draft');
     const { post } = this.taskConfig;
-    await this.createHexoPostFile(post, update, 'draft');
+    if (Array.isArray(post)) {
+      post.forEach(async (_post, index) => {
+        logger.info(`Create Hexo draft file queue ${index + 1}`, this.context);
+        await this.createHexoPostFile(_post, update, 'draft');
+      });
+    } else {
+      logger.info(`Create single Hexo draft file`, this.context);
+      await this.createHexoPostFile(post, update, 'draft');
+    }
   }
 
   async publishHexoDraftFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for publish draft');
     const { post } = this.taskConfig;
-    await this.publishHexoDraftFile(post, update);
+    if (Array.isArray(post)) {
+      post.forEach(async (_post, index) => {
+        logger.info(`Publish Hexo draft file queue ${index + 1}`, this.context);
+        await this.publishHexoDraftFile(_post, update);
+      });
+    } else {
+      logger.info(`Publish single Hexo draft file`, this.context);
+      await this.publishHexoDraftFile(post, update);
+    }
   }
 }
