@@ -202,11 +202,13 @@ export class HexoService {
 
   private async createHexoPostFile(
     post: MetaWorker.Info.Post,
-    replace: boolean,
+    replace = false,
+    layout: 'post' | 'draft' = 'post',
   ): Promise<void> {
     try {
       if (replace) logger.info(`Hexo create replace mode on`, this.context);
       const postData: Hexo.Post.Data & HexoFrontMatter = {
+        layout,
         title: post.title,
         date: post.createdAt || post.updatedAt || Date.now(),
         updated: post.updatedAt || '',
@@ -214,13 +216,13 @@ export class HexoService {
         categories: post.categories || [],
         excerpt: post.summary || '',
       };
-      logger.info(`Create post file, title: ${post.title}`, this.context);
+      logger.info(`Create ${layout} file, title: ${post.title}`, this.context);
       const _create = (await this.inst.post.create(
         postData,
         replace,
       )) as unknown;
       logger.info(
-        `Successfully create post file: ${JSON.stringify(_create)}`,
+        `Successfully create ${layout} file: ${JSON.stringify(_create)}`,
         this.context,
       );
       await this.inst.exit();
@@ -300,6 +302,13 @@ export class HexoService {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create post');
     const { post } = this.taskConfig;
-    await this.createHexoPostFile(post, update);
+    await this.createHexoPostFile(post, update, 'post');
+  }
+
+  async createHexoDraftFiles(update = false): Promise<void> {
+    if (!isPostTask(this.taskConfig))
+      throw new Error('Task config is not for create draft');
+    const { post } = this.taskConfig;
+    await this.createHexoPostFile(post, update, 'draft');
   }
 }
