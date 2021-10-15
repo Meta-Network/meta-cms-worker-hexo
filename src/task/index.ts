@@ -14,6 +14,7 @@ export const startTask = async (): Promise<void> => {
     MetaWorker.Enums.TaskMethod.HEXO_UPDATE_POST,
     MetaWorker.Enums.TaskMethod.HEXO_CREATE_DRAFT,
     MetaWorker.Enums.TaskMethod.HEXO_UPDATE_DRAFT,
+    MetaWorker.Enums.TaskMethod.HEXO_PUBLISH_DRAFT,
   ];
 
   const http = getBackendService();
@@ -62,6 +63,12 @@ export const startTask = async (): Promise<void> => {
     logger.info(`Starting task createHexoDraftFile, replase true`);
     await hexoService.createHexoDraftFiles(true);
     logger.info(`Task createHexoDraftFile finished`);
+  }
+
+  if (taskMethod === MetaWorker.Enums.TaskMethod.HEXO_PUBLISH_DRAFT) {
+    logger.info(`Starting task publishHexoDraftFiles, replase true`);
+    await hexoService.publishHexoDraftFiles(true);
+    logger.info(`Task publishHexoDraftFiles finished`);
   }
 
   await http.reportWorkerTaskFinishedToBackend();

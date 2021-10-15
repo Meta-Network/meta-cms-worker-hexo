@@ -235,6 +235,39 @@ export class HexoService {
     }
   }
 
+  private async publishHexoDraftFile(
+    post: MetaWorker.Info.Post,
+    replace = false,
+  ): Promise<void> {
+    try {
+      if (replace) logger.info(`Hexo publish replace mode on`, this.context);
+      const postData: Hexo.Post.Data & HexoFrontMatter = {
+        layout: 'post',
+        slug: post.title,
+        title: post.title,
+        date: post.createdAt || post.updatedAt || Date.now(),
+        // Below fields are not be update when publish from draft
+        updated: post.updatedAt || '',
+        tags: post.tags || [],
+        categories: post.categories || [],
+        excerpt: post.summary || '',
+      };
+      logger.info(`Publish draft file, title: ${post.title}`, this.context);
+      const _publish = (await this.inst.post.publish(
+        postData,
+        replace,
+      )) as unknown;
+      logger.info(
+        `Successfully publish draft file: ${JSON.stringify(_publish)}`,
+        this.context,
+      );
+      await this.inst.exit();
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
+    }
+  }
+
   async init(args?: Hexo.InstanceOptions): Promise<void> {
     if (isDeployTask(this.taskConfig)) {
       // Update _config.yml before Hexo init
@@ -310,5 +343,12 @@ export class HexoService {
       throw new Error('Task config is not for create draft');
     const { post } = this.taskConfig;
     await this.createHexoPostFile(post, update, 'draft');
+  }
+
+  async publishHexoDraftFiles(update = false): Promise<void> {
+    if (!isPostTask(this.taskConfig))
+      throw new Error('Task config is not for publish draft');
+    const { post } = this.taskConfig;
+    await this.publishHexoDraftFile(post, update);
   }
 }
