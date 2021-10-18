@@ -205,67 +205,52 @@ export class HexoService {
     replace = false,
     layout: 'post' | 'draft' = 'post',
   ): Promise<void> {
-    try {
-      if (replace) logger.info(`Hexo create replace mode on`, this.context);
-      const postData: Hexo.Post.Data & HexoFrontMatter = {
-        layout,
-        title: post.title,
-        date: post.createdAt || post.updatedAt || Date.now(),
-        updated: post.updatedAt || '',
-        tags: post.tags || [],
-        categories: post.categories || [],
-        excerpt: post.summary || '',
-      };
-      logger.info(`Create ${layout} file, title: ${post.title}`, this.context);
-      const _create = (await this.inst.post.create(
-        postData,
-        replace,
-      )) as unknown;
-      logger.info(
-        `Successfully create ${layout} file: ${JSON.stringify(_create)}`,
-        this.context,
-      );
-      await this.inst.exit();
-      const { path } = _create as HexoPostCreate;
-      await fs.appendFile(path, `\n${post.source}\n`);
-      logger.info(`Successfully write source content to ${path}`, this.context);
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
-    }
+    if (replace) logger.info(`Hexo create replace mode on`, this.context);
+    const postData: Hexo.Post.Data & HexoFrontMatter = {
+      layout,
+      title: post.title,
+      date: post.createdAt || post.updatedAt || Date.now(),
+      updated: post.updatedAt || '',
+      tags: post.tags || [],
+      categories: post.categories || [],
+      excerpt: post.summary || '',
+    };
+    logger.info(`Create ${layout} file, title: ${post.title}`, this.context);
+    const _create = (await this.inst.post.create(postData, replace)) as unknown;
+    logger.info(
+      `Successfully create ${layout} file: ${JSON.stringify(_create)}`,
+      this.context,
+    );
+    const { path } = _create as HexoPostCreate;
+    await fs.appendFile(path, `\n${post.source}\n`);
+    logger.info(`Successfully write source content to ${path}`, this.context);
   }
 
   private async publishHexoDraftFile(
     post: MetaWorker.Info.Post,
     replace = false,
   ): Promise<void> {
-    try {
-      if (replace) logger.info(`Hexo publish replace mode on`, this.context);
-      const postData: Hexo.Post.Data & HexoFrontMatter = {
-        layout: 'post',
-        slug: post.title,
-        title: post.title,
-        date: post.createdAt || post.updatedAt || Date.now(),
-        // Below fields are not be update when publish from draft
-        updated: post.updatedAt || '',
-        tags: post.tags || [],
-        categories: post.categories || [],
-        excerpt: post.summary || '',
-      };
-      logger.info(`Publish draft file, title: ${post.title}`, this.context);
-      const _publish = (await this.inst.post.publish(
-        postData,
-        replace,
-      )) as unknown;
-      logger.info(
-        `Successfully publish draft file: ${JSON.stringify(_publish)}`,
-        this.context,
-      );
-      await this.inst.exit();
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
-    }
+    if (replace) logger.info(`Hexo publish replace mode on`, this.context);
+    const postData: Hexo.Post.Data & HexoFrontMatter = {
+      layout: 'post',
+      slug: post.title,
+      title: post.title,
+      date: post.createdAt || post.updatedAt || Date.now(),
+      // Below fields are not be update when publish from draft
+      updated: post.updatedAt || '',
+      tags: post.tags || [],
+      categories: post.categories || [],
+      excerpt: post.summary || '',
+    };
+    logger.info(`Publish draft file, title: ${post.title}`, this.context);
+    const _publish = (await this.inst.post.publish(
+      postData,
+      replace,
+    )) as unknown;
+    logger.info(
+      `Successfully publish draft file: ${JSON.stringify(_publish)}`,
+      this.context,
+    );
   }
 
   async init(args?: Hexo.InstanceOptions): Promise<void> {
@@ -334,45 +319,78 @@ export class HexoService {
   async createHexoPostFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create post');
-    const { post } = this.taskConfig;
-    if (Array.isArray(post)) {
-      post.forEach(async (_post, index) => {
-        logger.info(`Create Hexo post file queue ${index + 1}`, this.context);
-        await this.createHexoPostFile(_post, update, 'post');
-      });
-    } else {
-      logger.info(`Create single Hexo post file`, this.context);
-      await this.createHexoPostFile(post, update, 'post');
+    try {
+      const { post } = this.taskConfig;
+      if (Array.isArray(post)) {
+        await Promise.all(
+          post.map(async (_post, index) => {
+            logger.info(
+              `Create Hexo post file queue ${index + 1}`,
+              this.context,
+            );
+            await this.createHexoPostFile(_post, update, 'post');
+          }),
+        );
+      } else {
+        logger.info(`Create single Hexo post file`, this.context);
+        await this.createHexoPostFile(post, update, 'post');
+      }
+      await this.inst.exit();
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
     }
   }
 
   async createHexoDraftFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create draft');
-    const { post } = this.taskConfig;
-    if (Array.isArray(post)) {
-      post.forEach(async (_post, index) => {
-        logger.info(`Create Hexo draft file queue ${index + 1}`, this.context);
-        await this.createHexoPostFile(_post, update, 'draft');
-      });
-    } else {
-      logger.info(`Create single Hexo draft file`, this.context);
-      await this.createHexoPostFile(post, update, 'draft');
+    try {
+      const { post } = this.taskConfig;
+      if (Array.isArray(post)) {
+        await Promise.all(
+          post.map(async (_post, index) => {
+            logger.info(
+              `Create Hexo draft file queue ${index + 1}`,
+              this.context,
+            );
+            await this.createHexoPostFile(_post, update, 'draft');
+          }),
+        );
+      } else {
+        logger.info(`Create single Hexo draft file`, this.context);
+        await this.createHexoPostFile(post, update, 'draft');
+      }
+      await this.inst.exit();
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
     }
   }
 
   async publishHexoDraftFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for publish draft');
-    const { post } = this.taskConfig;
-    if (Array.isArray(post)) {
-      post.forEach(async (_post, index) => {
-        logger.info(`Publish Hexo draft file queue ${index + 1}`, this.context);
-        await this.publishHexoDraftFile(_post, update);
-      });
-    } else {
-      logger.info(`Publish single Hexo draft file`, this.context);
-      await this.publishHexoDraftFile(post, update);
+    try {
+      const { post } = this.taskConfig;
+      if (Array.isArray(post)) {
+        await Promise.all(
+          post.map(async (_post, index) => {
+            logger.info(
+              `Publish Hexo draft file queue ${index + 1}`,
+              this.context,
+            );
+            await this.publishHexoDraftFile(_post, update);
+          }),
+        );
+      } else {
+        logger.info(`Publish single Hexo draft file`, this.context);
+        await this.publishHexoDraftFile(post, update);
+      }
+      await this.inst.exit();
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
     }
   }
 }
