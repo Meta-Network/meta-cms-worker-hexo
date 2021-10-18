@@ -322,7 +322,7 @@ export class HexoService {
     try {
       const { post } = this.taskConfig;
       if (Array.isArray(post)) {
-        await Promise.all(
+        await Promise.allSettled(
           post.map(async (_post, index) => {
             logger.info(
               `Create Hexo post file queue ${index + 1}`,
@@ -348,7 +348,7 @@ export class HexoService {
     try {
       const { post } = this.taskConfig;
       if (Array.isArray(post)) {
-        await Promise.all(
+        await Promise.allSettled(
           post.map(async (_post, index) => {
             logger.info(
               `Create Hexo draft file queue ${index + 1}`,
@@ -374,7 +374,7 @@ export class HexoService {
     try {
       const { post } = this.taskConfig;
       if (Array.isArray(post)) {
-        await Promise.all(
+        await Promise.allSettled(
           post.map(async (_post, index) => {
             logger.info(
               `Publish Hexo draft file queue ${index + 1}`,
