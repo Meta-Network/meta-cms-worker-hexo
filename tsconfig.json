@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "es6",
     "target": "esnext",
     "declaration": true,
     "removeComments": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "moduleResolution": "Node",
     "sourceMap": true
   },
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]

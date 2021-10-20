@@ -19,6 +19,7 @@ import { formatUrl, isEmptyObj } from '../utils';
 
 export class HexoService {
   constructor(private readonly taskConfig: MixedTaskConfig) {
+    console.log('taskConfig:', taskConfig);
     this.context = { context: HexoService.name };
     const { task, git } = taskConfig;
     const baseDir = path.join(os.tmpdir(), task.taskWorkspace, git.gitReponame);
