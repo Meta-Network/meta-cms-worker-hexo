@@ -19,9 +19,8 @@ import { formatUrl, isEmptyObj } from '../utils';
 
 export class HexoService {
   constructor(private readonly taskConfig: MixedTaskConfig) {
-    console.log('taskConfig:', taskConfig);
     this.context = { context: HexoService.name };
-    const { task, git } = taskConfig;
+    const { task, git } = this.taskConfig;
     const baseDir = path.join(os.tmpdir(), task.taskWorkspace, git.gitReponame);
     logger.verbose(`Hexo work dir is: ${baseDir}`, this.context);
     const isExists = existsSync(baseDir);
