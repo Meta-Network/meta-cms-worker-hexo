@@ -125,18 +125,21 @@ export class HexoService {
       title: site.title,
       subtitle: site.subtitle || '',
       description: site.description || '',
-      author: site.author || user.username || user.nickname || '',
+      author: site.author || user.nickname || user.username || '',
+      avatar:
+        site.avatar ||
+        'https://ipfs.fleek.co/ipfs/bafybeiccss3figrixd5qhhv6i6zhbz5chmyls6ja5kscu6drg7fnjcnxgm',
       keywords: site.keywords || [],
       // No favicon on _config.yml(taskConfig.favicon)
       language: site.language || 'en',
-      timezone: site.timezone || 'Asia/Shanghai', // If support UTC + or - will change it
+      timezone: site.timezone || 'Asia/Shanghai',
       /**
        * On our platform, it always has a domain,
        * but Hexo not allow empty url,
        * if someting happen, use default
        */
       url: formatUrl(site.domain) || 'https://example.com',
-      theme: theme.themeName,
+      theme: theme.themeName.toLowerCase(),
     };
 
     const confName = '_config.yml';
