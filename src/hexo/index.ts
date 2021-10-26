@@ -217,6 +217,7 @@ export class HexoService {
       tags: post.tags || [],
       categories: post.categories || [],
       excerpt: post.summary || '',
+      ...post,
     };
     logger.info(`Create ${layout} file, title: ${post.title}`, this.context);
     const _create = (await this.inst.post.create(postData, replace)) as unknown;
