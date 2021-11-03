@@ -20,8 +20,15 @@ import { formatUrl, isEmptyObj } from '../utils';
 export class HexoService {
   constructor(private readonly taskConfig: MixedTaskConfig) {
     this.context = { context: HexoService.name };
-    const { task, git } = this.taskConfig;
-    const baseDir = path.join(os.tmpdir(), task.taskWorkspace, git.gitReponame);
+    const {
+      task,
+      git: { storage },
+    } = this.taskConfig;
+    const baseDir = path.join(
+      os.tmpdir(),
+      task.taskWorkspace,
+      storage.reponame,
+    );
     logger.verbose(`Hexo work dir is: ${baseDir}`, this.context);
     const isExists = existsSync(baseDir);
     if (!isExists) throw Error(`Hexo work dir does not exists`);
