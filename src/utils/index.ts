@@ -10,3 +10,12 @@ export const formatUrl = (url: string): string => {
   // return _url.href;
   return `https://${url}`;
 };
+
+export function omitObj<T = Record<string, unknown>>(
+  obj: T,
+  props: string[],
+): T {
+  obj = { ...obj };
+  props.forEach((prop) => delete obj[prop]);
+  return obj;
+}

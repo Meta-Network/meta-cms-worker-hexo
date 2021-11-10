@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { isDeployTask, isPostTask } from '@metaio/worker-common';
 import { MetaWorker } from '@metaio/worker-model';
 import childProcess from 'child_process';
@@ -5,17 +6,18 @@ import fs from 'fs/promises';
 import Hexo from 'hexo';
 import HexoInternalConfig from 'hexo/lib/hexo/default_config';
 import { exists, existsSync } from 'hexo-fs';
+import { slugize } from 'hexo-util';
 import os from 'os';
 import path from 'path';
 import process from 'process';
-import resolve from 'resolve';
+import { sync } from 'resolve';
 import yaml from 'yaml';
 
 import { config } from '../configs';
 import { logger } from '../logger';
 import { LogContext, MixedTaskConfig } from '../types';
 import { HexoConfig, HexoFrontMatter, HexoPostCreate } from '../types/hexo';
-import { formatUrl, isEmptyObj } from '../utils';
+import { formatUrl, isEmptyObj, omitObj } from '../utils';
 
 export class HexoService {
   constructor(private readonly taskConfig: MixedTaskConfig) {
@@ -104,7 +106,7 @@ export class HexoService {
     );
 
     try {
-      const modulePath = resolve.sync('hexo', { basedir: path });
+      const modulePath = sync('hexo', { basedir: path });
       const localHexo = await require(modulePath);
       logger.info(`Use local Hexo module`, this.context);
       return new localHexo(path, arg) as Hexo;
@@ -226,6 +228,10 @@ export class HexoService {
       excerpt: post.summary || '',
       ...post,
     };
+    // @ts-ignore
+    if (postData.source) delete postData.source;
+    // @ts-ignore
+    if (postData.summary) delete postData.summary;
     logger.info(`Create ${layout} file, title: ${post.title}`, this.context);
     const _create = (await this.inst.post.create(postData, replace)) as unknown;
     logger.info(
@@ -262,6 +268,49 @@ export class HexoService {
       `Successfully publish draft file: ${JSON.stringify(_publish)}`,
       this.context,
     );
+  }
+
+  private async removeHexoPostFile(
+    post: MetaWorker.Info.Post,
+    layout: 'post' | 'draft' = 'post',
+  ): Promise<MetaWorker.Info.Post> {
+    if (typeof this.inst['execFilter'] === 'function') {
+      const postData: Hexo.Post.Data & HexoFrontMatter = {
+        layout,
+        slug: slugize(post.title, {
+          transform: this.inst.config.filename_case as 1 | 2,
+        }),
+      };
+
+      // @ts-ignore
+      const path = await this.inst.execFilter('new_post_path', postData, {
+        args: [true], // use replase mode
+        context: { ...this.inst }, // a Hexo instance copy
+      });
+
+      if (path) {
+        logger.info(
+          `Remove ${layout} file, title: ${post.title}, path: ${path}`,
+          this.context,
+        );
+        await fs.rm(path, { force: true });
+      } else {
+        logger.info(
+          `Can not remove ${layout} file, title ${post.title} does not exists`,
+          this.context,
+        );
+      }
+    }
+
+    const _post: MetaWorker.Info.Post = {
+      ...post,
+      title: post.META_SPACE_INTERNAL_NEW_TITLE as string,
+    };
+    // Remove all meta space internal props
+    const propArr = Object.keys(_post).filter((key) =>
+      key.startsWith('META_SPACE_INTERNAL'),
+    );
+    return omitObj(_post, propArr);
   }
 
   async init(args?: Hexo.InstanceOptions): Promise<void> {
@@ -339,12 +388,21 @@ export class HexoService {
               `Create Hexo post file queue ${index + 1}`,
               this.context,
             );
+            if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
+              const post = await this.removeHexoPostFile(_post, 'post');
+              _post = post;
+            }
             await this.createHexoPostFile(_post, update, 'post');
           }),
         );
       } else {
         logger.info(`Create single Hexo post file`, this.context);
-        await this.createHexoPostFile(post, update, 'post');
+        let _post = post;
+        if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
+          const _nPost = await this.removeHexoPostFile(_post);
+          _post = _nPost;
+        }
+        await this.createHexoPostFile(_post, update, 'post');
       }
       await this.inst.exit();
     } catch (error) {
@@ -365,12 +423,21 @@ export class HexoService {
               `Create Hexo draft file queue ${index + 1}`,
               this.context,
             );
+            if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
+              const post = await this.removeHexoPostFile(_post, 'draft');
+              _post = post;
+            }
             await this.createHexoPostFile(_post, update, 'draft');
           }),
         );
       } else {
         logger.info(`Create single Hexo draft file`, this.context);
-        await this.createHexoPostFile(post, update, 'draft');
+        let _post = post;
+        if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
+          const _nPost = await this.removeHexoPostFile(_post);
+          _post = _nPost;
+        }
+        await this.createHexoPostFile(_post, update, 'draft');
       }
       await this.inst.exit();
     } catch (error) {
