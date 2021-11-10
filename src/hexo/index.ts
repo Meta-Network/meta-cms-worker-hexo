@@ -215,7 +215,7 @@ export class HexoService {
   private async createHexoPostFile(
     post: MetaWorker.Info.Post,
     replace = false,
-    layout: 'post' | 'draft' = 'post',
+    layout: 'post' | 'draft',
   ): Promise<void> {
     if (replace) logger.info(`Hexo create replace mode on`, this.context);
     const postData: Hexo.Post.Data & HexoFrontMatter = {
@@ -272,7 +272,7 @@ export class HexoService {
 
   private async removeHexoPostFile(
     post: MetaWorker.Info.Post,
-    layout: 'post' | 'draft' = 'post',
+    layout: 'post' | 'draft',
   ): Promise<MetaWorker.Info.Post> {
     if (typeof this.inst['execFilter'] === 'function') {
       const postData: Hexo.Post.Data & HexoFrontMatter = {
@@ -399,7 +399,7 @@ export class HexoService {
         logger.info(`Create single Hexo post file`, this.context);
         let _post = post;
         if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-          const _nPost = await this.removeHexoPostFile(_post);
+          const _nPost = await this.removeHexoPostFile(_post, 'post');
           _post = _nPost;
         }
         await this.createHexoPostFile(_post, update, 'post');
@@ -434,7 +434,7 @@ export class HexoService {
         logger.info(`Create single Hexo draft file`, this.context);
         let _post = post;
         if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-          const _nPost = await this.removeHexoPostFile(_post);
+          const _nPost = await this.removeHexoPostFile(_post, 'draft');
           _post = _nPost;
         }
         await this.createHexoPostFile(_post, update, 'draft');
