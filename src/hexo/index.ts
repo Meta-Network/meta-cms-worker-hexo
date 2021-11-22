@@ -270,10 +270,10 @@ export class HexoService {
     );
   }
 
-  private async removeHexoPostFile(
+  private async getHexoPostFilePath(
     post: MetaWorker.Info.Post,
     layout: 'post' | 'draft',
-  ): Promise<MetaWorker.Info.Post> {
+  ): Promise<string> {
     if (typeof this.inst['execFilter'] === 'function') {
       const postData: Hexo.Post.Data & HexoFrontMatter = {
         layout,
@@ -288,20 +288,13 @@ export class HexoService {
         context: { ...this.inst }, // a Hexo instance copy
       });
 
-      if (path) {
-        logger.info(
-          `Remove ${layout} file, title: ${post.title}, path: ${path}`,
-          this.context,
-        );
-        await fs.rm(path, { force: true });
-      } else {
-        logger.info(
-          `Can not remove ${layout} file, title ${post.title} does not exists`,
-          this.context,
-        );
-      }
+      return path;
     }
+  }
 
+  private async getPostInfoWithNewTitle(
+    post: MetaWorker.Info.Post,
+  ): Promise<MetaWorker.Info.Post> {
     const _post: MetaWorker.Info.Post = {
       ...post,
       title: post.META_SPACE_INTERNAL_NEW_TITLE as string,
@@ -311,6 +304,44 @@ export class HexoService {
       key.startsWith('META_SPACE_INTERNAL'),
     );
     return omitObj(_post, propArr);
+  }
+
+  private async removeHexoPostFile(
+    post: MetaWorker.Info.Post,
+    layout: 'post' | 'draft',
+  ): Promise<void> {
+    const path = await this.getHexoPostFilePath(post, layout);
+    if (path) {
+      logger.info(
+        `Remove ${layout} file, title: ${post.title}, path: ${path}`,
+        this.context,
+      );
+      await fs.rm(path, { force: true });
+    } else {
+      logger.info(
+        `Can not remove ${layout} file, title ${post.title} does not exists`,
+        this.context,
+      );
+    }
+  }
+
+  private async movePostFileToDraft(post: MetaWorker.Info.Post): Promise<void> {
+    const draftsPath = path.join(this.inst.source_dir, '_drafts');
+    const postsPath = path.join(this.inst.source_dir, '_posts');
+    const filePath = await this.getHexoPostFilePath(post, 'post');
+    const movePath = filePath.replace(postsPath, draftsPath);
+    if (path && movePath) {
+      logger.info(
+        `Move title ${post.title} from path ${filePath} to ${movePath}`,
+        this.context,
+      );
+      await fs.rename(filePath, movePath);
+    } else {
+      logger.info(
+        `Can not move title ${post.title}, file ${filePath} does not exists`,
+        this.context,
+      );
+    }
   }
 
   async init(args?: Hexo.InstanceOptions): Promise<void> {
@@ -389,7 +420,8 @@ export class HexoService {
               this.context,
             );
             if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-              const post = await this.removeHexoPostFile(_post, 'post');
+              await this.removeHexoPostFile(_post, 'post');
+              const post = await this.getPostInfoWithNewTitle(_post);
               _post = post;
             }
             await this.createHexoPostFile(_post, update, 'post');
@@ -399,7 +431,8 @@ export class HexoService {
         logger.info(`Create single Hexo post file`, this.context);
         let _post = post;
         if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-          const _nPost = await this.removeHexoPostFile(_post, 'post');
+          await this.removeHexoPostFile(_post, 'post');
+          const _nPost = await this.getPostInfoWithNewTitle(_post);
           _post = _nPost;
         }
         await this.createHexoPostFile(_post, update, 'post');
@@ -424,7 +457,8 @@ export class HexoService {
               this.context,
             );
             if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-              const post = await this.removeHexoPostFile(_post, 'draft');
+              await this.removeHexoPostFile(_post, 'draft');
+              const post = await this.getPostInfoWithNewTitle(_post);
               _post = post;
             }
             await this.createHexoPostFile(_post, update, 'draft');
@@ -434,7 +468,8 @@ export class HexoService {
         logger.info(`Create single Hexo draft file`, this.context);
         let _post = post;
         if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-          const _nPost = await this.removeHexoPostFile(_post, 'draft');
+          await this.removeHexoPostFile(_post, 'draft');
+          const _nPost = await this.getPostInfoWithNewTitle(_post);
           _post = _nPost;
         }
         await this.createHexoPostFile(_post, update, 'draft');
@@ -464,6 +499,58 @@ export class HexoService {
       } else {
         logger.info(`Publish single Hexo draft file`, this.context);
         await this.publishHexoDraftFile(post, update);
+      }
+      await this.inst.exit();
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
+    }
+  }
+
+  async moveHexoPostFilesToDraft(): Promise<void> {
+    if (!isPostTask(this.taskConfig))
+      throw new Error('Task config is not for create post');
+    try {
+      const { post } = this.taskConfig;
+      if (Array.isArray(post)) {
+        await Promise.allSettled(
+          post.map(async (_post, index) => {
+            logger.info(
+              `Move Hexo post file to draft queue ${index + 1}`,
+              this.context,
+            );
+            await this.movePostFileToDraft(_post);
+          }),
+        );
+      } else {
+        logger.info(`Move single Hexo post file to draft`, this.context);
+        await this.movePostFileToDraft(post);
+      }
+      await this.inst.exit();
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
+    }
+  }
+
+  async deleteHexoPostFiles(): Promise<void> {
+    if (!isPostTask(this.taskConfig))
+      throw new Error('Task config is not for create post');
+    try {
+      const { post } = this.taskConfig;
+      if (Array.isArray(post)) {
+        await Promise.allSettled(
+          post.map(async (_post, index) => {
+            logger.info(
+              `Delete Hexo post file queue ${index + 1}`,
+              this.context,
+            );
+            await this.removeHexoPostFile(_post, 'post');
+          }),
+        );
+      } else {
+        logger.info(`Delete single Hexo post file`, this.context);
+        await this.removeHexoPostFile(post, 'post');
       }
       await this.inst.exit();
     } catch (error) {
