@@ -344,6 +344,26 @@ export class HexoService {
     }
   }
 
+  private async processHexoPostFile(
+    post: MetaWorker.Info.Post | MetaWorker.Info.Post[],
+    processer: (post: MetaWorker.Info.Post, index?: number) => Promise<void>,
+  ): Promise<void> {
+    try {
+      if (Array.isArray(post)) {
+        await Promise.allSettled(
+          post.map(async (_post, index) => {
+            await processer(_post, index);
+          }),
+        );
+      } else {
+        await processer(post);
+      }
+    } catch (error) {
+      await this.inst.exit(error);
+      throw error;
+    }
+  }
+
   async init(args?: Hexo.InstanceOptions): Promise<void> {
     if (isDeployTask(this.taskConfig)) {
       // Update _config.yml before Hexo init
@@ -410,25 +430,15 @@ export class HexoService {
   async createHexoPostFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create post');
-    try {
-      const { post } = this.taskConfig;
-      if (Array.isArray(post)) {
-        await Promise.allSettled(
-          post.map(async (_post, index) => {
-            logger.info(
-              `Create Hexo post file queue ${index + 1}`,
-              this.context,
-            );
-            if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-              await this.removeHexoPostFile(_post, 'post');
-              const post = await this.getPostInfoWithNewTitle(_post);
-              _post = post;
-            }
-            await this.createHexoPostFile(_post, update, 'post');
-          }),
-        );
-      } else {
-        logger.info(`Create single Hexo post file`, this.context);
+    const { post } = this.taskConfig;
+    await this.processHexoPostFile(
+      post,
+      async (post: MetaWorker.Info.Post, index?: number) => {
+        if (index) {
+          logger.info(`Create Hexo post file queue ${index + 1}`, this.context);
+        } else {
+          logger.info(`Create single Hexo post file`, this.context);
+        }
         let _post = post;
         if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
           await this.removeHexoPostFile(_post, 'post');
@@ -436,36 +446,25 @@ export class HexoService {
           _post = _nPost;
         }
         await this.createHexoPostFile(_post, update, 'post');
-      }
-      await this.inst.exit();
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
-    }
+      },
+    );
   }
 
   async createHexoDraftFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for create draft');
-    try {
-      const { post } = this.taskConfig;
-      if (Array.isArray(post)) {
-        await Promise.allSettled(
-          post.map(async (_post, index) => {
-            logger.info(
-              `Create Hexo draft file queue ${index + 1}`,
-              this.context,
-            );
-            if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
-              await this.removeHexoPostFile(_post, 'draft');
-              const post = await this.getPostInfoWithNewTitle(_post);
-              _post = post;
-            }
-            await this.createHexoPostFile(_post, update, 'draft');
-          }),
-        );
-      } else {
-        logger.info(`Create single Hexo draft file`, this.context);
+    const { post } = this.taskConfig;
+    await this.processHexoPostFile(
+      post,
+      async (post: MetaWorker.Info.Post, index?: number) => {
+        if (index) {
+          logger.info(
+            `Create Hexo draft file queue ${index + 1}`,
+            this.context,
+          );
+        } else {
+          logger.info(`Create single Hexo draft file`, this.context);
+        }
         let _post = post;
         if (_post.META_SPACE_INTERNAL_NEW_TITLE) {
           await this.removeHexoPostFile(_post, 'draft');
@@ -473,89 +472,64 @@ export class HexoService {
           _post = _nPost;
         }
         await this.createHexoPostFile(_post, update, 'draft');
-      }
-      await this.inst.exit();
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
-    }
+      },
+    );
   }
 
   async publishHexoDraftFiles(update = false): Promise<void> {
     if (!isPostTask(this.taskConfig))
       throw new Error('Task config is not for publish draft');
-    try {
-      const { post } = this.taskConfig;
-      if (Array.isArray(post)) {
-        await Promise.allSettled(
-          post.map(async (_post, index) => {
-            logger.info(
-              `Publish Hexo draft file queue ${index + 1}`,
-              this.context,
-            );
-            await this.publishHexoDraftFile(_post, update);
-          }),
-        );
-      } else {
-        logger.info(`Publish single Hexo draft file`, this.context);
+    const { post } = this.taskConfig;
+    await this.processHexoPostFile(
+      post,
+      async (post: MetaWorker.Info.Post, index?: number) => {
+        if (index) {
+          logger.info(
+            `Publish Hexo draft file queue ${index + 1}`,
+            this.context,
+          );
+        } else {
+          logger.info(`Publish single Hexo draft file`, this.context);
+        }
         await this.publishHexoDraftFile(post, update);
-      }
-      await this.inst.exit();
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
-    }
+      },
+    );
   }
 
   async moveHexoPostFilesToDraft(): Promise<void> {
     if (!isPostTask(this.taskConfig))
-      throw new Error('Task config is not for create post');
-    try {
-      const { post } = this.taskConfig;
-      if (Array.isArray(post)) {
-        await Promise.allSettled(
-          post.map(async (_post, index) => {
-            logger.info(
-              `Move Hexo post file to draft queue ${index + 1}`,
-              this.context,
-            );
-            await this.movePostFileToDraft(_post);
-          }),
-        );
-      } else {
-        logger.info(`Move single Hexo post file to draft`, this.context);
+      throw new Error('Task config is not for move post');
+    const { post } = this.taskConfig;
+    await this.processHexoPostFile(
+      post,
+      async (post: MetaWorker.Info.Post, index?: number) => {
+        if (index) {
+          logger.info(
+            `Move Hexo post file to draft queue ${index + 1}`,
+            this.context,
+          );
+        } else {
+          logger.info(`Move single Hexo post file to draft`, this.context);
+        }
         await this.movePostFileToDraft(post);
-      }
-      await this.inst.exit();
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
-    }
+      },
+    );
   }
 
   async deleteHexoPostFiles(): Promise<void> {
     if (!isPostTask(this.taskConfig))
-      throw new Error('Task config is not for create post');
-    try {
-      const { post } = this.taskConfig;
-      if (Array.isArray(post)) {
-        await Promise.allSettled(
-          post.map(async (_post, index) => {
-            logger.info(
-              `Delete Hexo post file queue ${index + 1}`,
-              this.context,
-            );
-            await this.removeHexoPostFile(_post, 'post');
-          }),
-        );
-      } else {
-        logger.info(`Delete single Hexo post file`, this.context);
+      throw new Error('Task config is not for delete post');
+    const { post } = this.taskConfig;
+    await this.processHexoPostFile(
+      post,
+      async (post: MetaWorker.Info.Post, index?: number) => {
+        if (index) {
+          logger.info(`Delete Hexo post file queue ${index + 1}`, this.context);
+        } else {
+          logger.info(`Delete single Hexo post file`, this.context);
+        }
         await this.removeHexoPostFile(post, 'post');
-      }
-      await this.inst.exit();
-    } catch (error) {
-      await this.inst.exit(error);
-      throw error;
-    }
+      },
+    );
   }
 }
