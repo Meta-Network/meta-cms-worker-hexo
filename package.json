@@ -1,8 +1,8 @@
 {
   "name": "meta-cms-worker-hexo",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "CMS Worker for hexo",
-  "author": "",
+  "author": "Meta Network <noreply@metanetwork.online>",
   "private": true,
   "license": "UNLICENSED",
   "source": "src/main.ts",
