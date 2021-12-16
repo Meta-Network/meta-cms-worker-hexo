@@ -44,15 +44,19 @@ export class HexoService {
   private async execChildProcess(cmd: string): Promise<boolean> {
     const promise = new Promise<boolean>((res, rej) => {
       const process = childProcess.exec(cmd, { cwd: this.baseDir });
+      let stdout = 'execChildProcess stdout\n';
+      let stderr = 'execChildProcess stderr\n';
       process.stdout.setEncoding('utf-8');
       process.stderr.setEncoding('utf-8');
       process.stdout.on('data', (data) => {
-        logger.verbose(data, this.context);
+        stdout += data;
       });
       process.stderr.on('data', (data) => {
-        logger.error(data, this.context);
+        stderr += data;
       });
       process.on('exit', (code, sig) => {
+        logger.verbose(stdout, this.context);
+        logger.error(stderr, this.context);
         if (code === 0) {
           logger.info(
             `Child process exec '${cmd}' with exit code ${code} and signal ${sig}`,
