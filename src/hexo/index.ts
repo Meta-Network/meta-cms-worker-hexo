@@ -75,28 +75,29 @@ export class HexoService {
     const yarnLock = path.join(findPath, 'yarn.lock');
     const isYarn = existsSync(yarnLock);
     if (isYarn) {
-      logger.info(`Find yarn lockfile, use Yarn package manager`, this.context);
+      logger.verbose(
+        `Find yarn lockfile, use Yarn package manager`,
+        this.context,
+      );
       return 'yarn';
     }
-    logger.info(`Use NPM package manager`, this.context);
+    logger.verbose(`Use NPM package manager`, this.context);
     return 'npm';
   }
 
   private async installNodeModules(): Promise<void> {
     logger.info(`Installing node modules for ${this.baseDir}`, this.context);
     const _pm = this.guessPackageManager(this.baseDir);
+    let process = false;
     if (_pm === 'yarn') {
-      const process = await this.execChildProcess(
+      process = await this.execChildProcess(
         'yarn install --production=false --frozen-lockfile',
       );
-      if (process)
-        logger.info(`Successfully install node modules`, this.context);
     }
     if (_pm === 'npm') {
-      const process = await this.execChildProcess('npm ci');
-      if (process)
-        logger.info(`Successfully install node modules`, this.context);
+      process = await this.execChildProcess('npm ci');
     }
+    if (process) logger.info(`Successfully install node modules`, this.context);
   }
 
   private async loadLocalHexoModule(
@@ -238,8 +239,8 @@ export class HexoService {
     if (postData.summary) delete postData.summary;
     logger.info(`Create ${layout} file, title: ${post.title}`, this.context);
     const _create = (await this.inst.post.create(postData, replace)) as unknown;
-    logger.info(
-      `Successfully create ${layout} file: ${JSON.stringify(_create)}`,
+    logger.verbose(
+      `Create ${layout} file: ${JSON.stringify(_create)}`,
       this.context,
     );
     const { path } = _create as HexoPostCreate;
@@ -268,10 +269,12 @@ export class HexoService {
       postData,
       replace,
     )) as unknown;
-    logger.info(
-      `Successfully publish draft file: ${JSON.stringify(_publish)}`,
+    logger.verbose(
+      `Publish draft file: ${JSON.stringify(_publish)}`,
       this.context,
     );
+    const { path } = _publish as HexoPostCreate;
+    logger.info(`Successfully publish draft file ${path}`, this.context);
   }
 
   private async getHexoPostFilePath(
@@ -322,7 +325,7 @@ export class HexoService {
       );
       await fs.rm(path, { force: true });
     } else {
-      logger.info(
+      logger.warn(
         `Can not remove ${layout} file, title ${post.title} does not exists`,
         this.context,
       );
@@ -341,7 +344,7 @@ export class HexoService {
       );
       await fs.rename(filePath, movePath);
     } else {
-      logger.info(
+      logger.warn(
         `Can not move title ${post.title}, file ${filePath} does not exists`,
         this.context,
       );
@@ -379,10 +382,10 @@ export class HexoService {
 
     await _hexo.init();
     logger.info(`Hexo version: ${_hexo.env.version}`, this.context);
-    logger.info(`Hexo base directory: ${_hexo.base_dir}`, this.context);
-    logger.info(`Hexo public directory: ${_hexo.public_dir}`, this.context);
-    logger.info(`Hexo source directory: ${_hexo.source_dir}`, this.context);
-    logger.info(`Hexo config file path: ${_hexo.config_path}`, this.context);
+    logger.verbose(`Hexo base directory: ${_hexo.base_dir}`, this.context);
+    logger.verbose(`Hexo public directory: ${_hexo.public_dir}`, this.context);
+    logger.verbose(`Hexo source directory: ${_hexo.source_dir}`, this.context);
+    logger.verbose(`Hexo config file path: ${_hexo.config_path}`, this.context);
     logger.info(`Hexo has been initialized`, this.context);
 
     _hexo.on('ready', () => {
