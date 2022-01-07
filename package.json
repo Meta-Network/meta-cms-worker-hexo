@@ -5,24 +5,23 @@
   "author": "Meta Network <noreply@metanetwork.online>",
   "private": true,
   "license": "UNLICENSED",
-  "source": "src/main.ts",
   "main": "dist/main.js",
-  "types": "dist/main.d.ts",
-  "targets": {
-    "main": {
-      "includeNodeModules": true
-    }
-  },
   "engines": {
     "node": ">=14 <15"
   },
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "parcel build",
-    "build:tsc": "tsc --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start:prod": "NODE_ENV='production' node dist/main.js",
+    "start": "ts-node src/main.ts",
+    "start:dev": "node-dev --respawn src/main.ts",
+    "start:debug": "DEBUG=* node-dev --respawn src/main.ts",
+    "start:debug:docker": "DEBUG=* ts-node src/main.ts",
+    "start:prod": "NODE_ENV='production' node --enable-source-maps dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "ava",
+    "test:watch": "ava --watch",
+    "test:coverage": "c8 ava",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -41,19 +40,16 @@
     "yaml": "^2.0.0-7"
   },
   "devDependencies": {
-    "@parcel/packager-ts": "^2.0.0",
-    "@parcel/transformer-typescript-types": "^2.0.0",
     "@types/cron": "^1.7.3",
     "@types/dotenv-flow": "^3.2.0",
     "@types/fs-extra": "^9.0.12",
     "@types/hexo": "^3.8.7",
     "@types/hexo-fs": "^0.2.10",
-    "@types/jest": "^27.0.3",
     "@types/node": "^16.7.1",
     "@types/resolve": "^1.20.1",
-    "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
+    "c8": "^7.11.0",
     "eslint": "^8.4.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-import-resolver-typescript": "^2.5.0",
@@ -63,33 +59,21 @@
     "husky": "^7.0.0",
     "lint-staged": "^12.1.2",
     "node-dev": "^7.0.0",
-    "parcel": "^2.0.0",
     "prettier": "^2.3.2",
     "rimraf": "^3.0.2",
-    "supertest": "^6.1.3",
-    "ts-jest": "^27.0.3",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.5"
   },
-  "alias": {
-    "stack-trace": "./npm/node-stack-trace-0.0.10/lib/stack-trace.js"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
+  "ava": {
+    "files": [
+      "test/**/*"
+    ],
+    "extensions": [
       "ts"
     ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "require": [
+      "ts-node/register"
+    ]
   },
   "lint-staged": {
     "*.{js,ts}": "eslint --cache --fix"
