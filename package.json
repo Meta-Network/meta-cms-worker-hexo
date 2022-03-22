@@ -4,10 +4,10 @@
   "description": "CMS Worker for hexo",
   "author": "Meta Network <noreply@metanetwork.online>",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT License",
   "main": "dist/main.js",
   "engines": {
-    "node": ">=14 <15"
+    "node": ">=16 <17"
   },
   "scripts": {
     "prebuild": "rimraf dist",
